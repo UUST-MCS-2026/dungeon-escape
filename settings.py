@@ -1,0 +1,22 @@
+
+# Настройки игры Dungeon Escape
+
+WIDTH = 800
+HEIGHT = 600
+TILE_SIZE = 40
+FPS = 60
+
+PLAYER_SPEED = 4
+PLAYER_HEALTH = 100
+STARTING_COINS = 0
+
+GAME_TITLE = "Dungeon Escape"
+
+# Цвета
+BLACK = (20, 20, 25)
+WHITE = (240, 240, 240)
+GRAY = (75, 75, 85)
+BLUE = (60, 140, 255)
+GOLD = (255, 200, 50)
+GREEN = (50, 200, 100)
+RED = (220, 60, 60)
