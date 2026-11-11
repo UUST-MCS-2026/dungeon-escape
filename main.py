@@ -35,17 +35,15 @@ won = False
 
 
 def restart_game():
-    global player, won
+    global player, won, exit_rect
+
+    new_walls, start, new_exit = create_level()
 
     walls.clear()
-    new_walls, start, new_exit = create_level()
     walls.extend(new_walls)
 
     player = Player(*start)
-
-    global exit_rect
     exit_rect = new_exit
-
     won = False
 
 
