@@ -2,143 +2,120 @@
 import pygame
 import sys
 
+from player import Player
+from level import create_level
+from ui import draw_hud, draw_message
+
+
+# Инициализация игры
 pygame.init()
 
-# Настройки окна
 WIDTH = 800
 HEIGHT = 600
-TILE_SIZE = 40
 FPS = 60
+
+BLACK = (20, 20, 25)
+GRAY = (75, 75, 85)
+GREEN = (50, 200, 100)
+GOLD = (255, 200, 50)
 
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Dungeon Escape")
+
 clock = pygame.time.Clock()
-
-# Цвета
-BLACK = (20, 20, 25)
-WHITE = (240, 240, 240)
-GRAY = (75, 75, 85)
-BLUE = (60, 140, 255)
-GOLD = (255, 200, 50)
-GREEN = (50, 200, 100)
-
 font = pygame.font.SysFont("arial", 28)
 
-# Карта: # — стена, P — игрок, E — выход
-level_map = [
-    "####################",
-    "#P.....#...........#",
-    "#......#..####.....#",
-    "#.............#....#",
-    "#..####.......#....#",
-    "#.............#....#",
-    "#.....#####........#",
-    "#..............#...#",
-    "#..####............#",
-    "#.................E#",
-    "####################",
-]
 
-walls = []
-exit_rect = None
-player = pygame.Rect(0, 0, 26, 26)
+# Создание уровня и игрока
+walls, player_start, exit_rect = create_level()
+player = Player(*player_start)
 
-for row_index, row in enumerate(level_map):
-    for col_index, tile in enumerate(row):
-        x = col_index * TILE_SIZE
-        y = row_index * TILE_SIZE
-
-        if tile == "#":
-            walls.append(pygame.Rect(x, y, TILE_SIZE, TILE_SIZE))
-        elif tile == "P":
-            player.topleft = (x + 7, y + 7)
-        elif tile == "E":
-            exit_rect = pygame.Rect(x + 5, y + 5, 30, 30)
-
-# Игровое состояние
-speed = 4
 running = True
 won = False
 
 
-def draw_text(text, x, y, color=WHITE):
-    image = font.render(text, True, color)
-    screen.blit(image, (x, y))
+def restart_game():
+    global player, won
+
+    walls.clear()
+    new_walls, start, new_exit = create_level()
+    walls.extend(new_walls)
+
+    player = Player(*start)
+
+    global exit_rect
+    exit_rect = new_exit
+
+    won = False
 
 
-def move_player(dx, dy):
-    # Движение по горизонтали
-    player.x += dx
-    for wall in walls:
-        if player.colliderect(wall):
-            if dx > 0:
-                player.right = wall.left
-            elif dx < 0:
-                player.left = wall.right
-
-    # Движение по вертикали
-    player.y += dy
-    for wall in walls:
-        if player.colliderect(wall):
-            if dy > 0:
-                player.bottom = wall.top
-            elif dy < 0:
-                player.top = wall.bottom
-
-
+# Главный игровой цикл
 while running:
     clock.tick(FPS)
 
+    # Обработка событий
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
 
         if event.type == pygame.KEYDOWN and won:
             if event.key == pygame.K_r:
-                player.topleft = (TILE_SIZE + 7, TILE_SIZE + 7)
-                won = False
+                restart_game()
 
-    keys = pygame.key.get_pressed()
-
+    # Управление игроком
     if not won:
+        keys = pygame.key.get_pressed()
+
         dx = 0
         dy = 0
 
         if keys[pygame.K_LEFT] or keys[pygame.K_a]:
-            dx = -speed
+            dx = -1
         if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
-            dx = speed
+            dx = 1
         if keys[pygame.K_UP] or keys[pygame.K_w]:
-            dy = -speed
+            dy = -1
         if keys[pygame.K_DOWN] or keys[pygame.K_s]:
-            dy = speed
+            dy = 1
 
-        move_player(dx, dy)
+        player.move(dx, dy, walls)
 
-        if exit_rect and player.colliderect(exit_rect):
+        # Проверка выхода
+        if exit_rect and player.rect.colliderect(exit_rect):
             won = True
 
     # Отрисовка
     screen.fill(BLACK)
 
+    # Стены
     for wall in walls:
         pygame.draw.rect(screen, GRAY, wall)
 
+    # Выход
     if exit_rect:
         pygame.draw.rect(screen, GREEN, exit_rect)
 
-    pygame.draw.rect(screen, BLUE, player, border_radius=6)
+    # Игрок
+    player.draw(screen)
 
-    draw_text("DUNGEON ESCAPE", 10, 10, GOLD)
+    # Заголовок
+    title = font.render("DUNGEON ESCAPE", True, GOLD)
+    screen.blit(title, (10, 10))
 
+    # Интерфейс
+    draw_hud(screen, font, player.health, player.score)
+
+    # Экран победы
     if won:
-        overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
-        overlay.fill((0, 0, 0, 180))
-        screen.blit(overlay, (0, 0))
-        draw_text("YOU ESCAPED!", 285, 250, GREEN)
-        draw_text("Press R to play again", 260, 300)
+        draw_message(
+            screen,
+            font,
+            "YOU ESCAPED!",
+            "Press R to play again"
+        )
 
     pygame.display.flip()
+
 
 pygame.quit()
 sys.exit()
