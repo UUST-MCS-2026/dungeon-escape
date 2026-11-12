@@ -75,4 +75,4 @@ def draw_game_over(screen, font):
         "GAME OVER",
         "Press R to try again"
     )
- 
+  
