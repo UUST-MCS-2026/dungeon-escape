@@ -28,9 +28,50 @@ def draw_message(screen, font, title, subtitle):
 
     screen.blit(
         title_image,
-        title_image.get_rect(center=(width // 2, height // 2 - 25))
+        title_image.get_rect(
+            center=(width // 2, height // 2 - 25)
+        )
     )
+
     screen.blit(
         subtitle_image,
-        subtitle_image.get_rect(center=(width // 2, height // 2 + 20))
+        subtitle_image.get_rect(
+            center=(width // 2, height // 2 + 20)
+        )
+    )
+
+
+def draw_menu(screen, title_font, text_font):
+    """Отображает главное меню игры."""
+    screen.fill(DARK)
+
+    width, height = screen.get_size()
+
+    title = title_font.render("DUNGEON ESCAPE", True, GOLD)
+    start = text_font.render("Press ENTER to start", True, WHITE)
+    quit_text = text_font.render("Press ESC to quit", True, WHITE)
+
+    screen.blit(
+        title,
+        title.get_rect(center=(width // 2, height // 2 - 60))
+    )
+
+    screen.blit(
+        start,
+        start.get_rect(center=(width // 2, height // 2 + 10))
+    )
+
+    screen.blit(
+        quit_text,
+        quit_text.get_rect(center=(width // 2, height // 2 + 50))
+    )
+
+
+def draw_game_over(screen, font):
+    """Отображает экран проигрыша."""
+    draw_message(
+        screen,
+        font,
+        "GAME OVER",
+        "Press R to try again"
     )
