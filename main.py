@@ -4,7 +4,7 @@ import sys
 
 from player import Player
 from level import create_level
-from ui import draw_hud, draw_message
+from ui import draw_hud, draw_message, draw_menu, draw_game_over
 
 
 # Инициализация игры
@@ -23,19 +23,28 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Dungeon Escape")
 
 clock = pygame.time.Clock()
+
+title_font = pygame.font.SysFont("arial", 42)
 font = pygame.font.SysFont("arial", 28)
+small_font = pygame.font.SysFont("arial", 22)
+
+
+# Состояния игры
+MENU = "menu"
+PLAYING = "playing"
+WON = "won"
+GAME_OVER = "game_over"
+
+game_state = MENU
 
 
 # Создание уровня и игрока
 walls, player_start, exit_rect = create_level()
 player = Player(*player_start)
 
-running = True
-won = False
-
 
 def restart_game():
-    global player, won, exit_rect
+    global player, exit_rect, game_state
 
     new_walls, start, new_exit = create_level()
 
@@ -44,10 +53,13 @@ def restart_game():
 
     player = Player(*start)
     exit_rect = new_exit
-    won = False
+
+    game_state = PLAYING
 
 
 # Главный игровой цикл
+running = True
+
 while running:
     clock.tick(FPS)
 
@@ -56,12 +68,27 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
-        if event.type == pygame.KEYDOWN and won:
-            if event.key == pygame.K_r:
-                restart_game()
+        if event.type == pygame.KEYDOWN:
 
-    # Управление игроком
-    if not won:
+            # Главное меню
+            if game_state == MENU:
+                if event.key == pygame.K_RETURN:
+                    game_state = PLAYING
+                elif event.key == pygame.K_ESCAPE:
+                    running = False
+
+            # Выход из игры
+            elif event.key == pygame.K_ESCAPE:
+                running = False
+
+            # Перезапуск после победы или поражения
+            elif game_state in (WON, GAME_OVER):
+                if event.key == pygame.K_r:
+                    restart_game()
+
+    # Игровой процесс
+    if game_state == PLAYING:
+
         keys = pygame.key.get_pressed()
 
         dx = 0
@@ -78,39 +105,53 @@ while running:
 
         player.move(dx, dy, walls)
 
+        # Проверка здоровья
+        if player.health <= 0:
+            game_state = GAME_OVER
+
         # Проверка выхода
-        if exit_rect and player.rect.colliderect(exit_rect):
-            won = True
+        elif exit_rect and player.rect.colliderect(exit_rect):
+            game_state = WON
 
     # Отрисовка
     screen.fill(BLACK)
 
-    # Стены
-    for wall in walls:
-        pygame.draw.rect(screen, GRAY, wall)
+    if game_state == MENU:
 
-    # Выход
-    if exit_rect:
-        pygame.draw.rect(screen, GREEN, exit_rect)
+        draw_menu(screen, title_font, small_font)
 
-    # Игрок
-    player.draw(screen)
+    elif game_state in (PLAYING, WON, GAME_OVER):
 
-    # Заголовок
-    title = font.render("DUNGEON ESCAPE", True, GOLD)
-    screen.blit(title, (10, 10))
+        # Стены
+        for wall in walls:
+            pygame.draw.rect(screen, GRAY, wall)
 
-    # Интерфейс
-    draw_hud(screen, font, player.health, player.score)
+        # Выход
+        if exit_rect:
+            pygame.draw.rect(screen, GREEN, exit_rect)
 
-    # Экран победы
-    if won:
-        draw_message(
-            screen,
-            font,
-            "YOU ESCAPED!",
-            "Press R to play again"
-        )
+        # Игрок
+        player.draw(screen)
+
+        # Заголовок
+        title = font.render("DUNGEON ESCAPE", True, GOLD)
+        screen.blit(title, (10, 10))
+
+        # Интерфейс
+        draw_hud(screen, font, player.health, player.score)
+
+        # Экран победы
+        if game_state == WON:
+            draw_message(
+                screen,
+                font,
+                "YOU ESCAPED!",
+                "Press R to play again"
+            )
+
+        # Экран поражения
+        elif game_state == GAME_OVER:
+            draw_game_over(screen, font)
 
     pygame.display.flip()
 
